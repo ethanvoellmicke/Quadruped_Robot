@@ -10,12 +10,12 @@ namespace
 constexpr float PI_F = 3.14159265358979323846f;
 constexpr float RAD_TO_DEG_F = 180.0f / PI_F;
 
-constexpr float COMPLEMENTARY_ALPHA = 0.98f;
-constexpr float OUTPUT_FILTER_ALPHA = 0.60f;
-constexpr float RATE_FILTER_ALPHA = 0.25f;
-constexpr float ANGLE_DEADBAND_DEG = 0.15f;
-constexpr uint16_t CALIBRATION_SAMPLES = 300;
-constexpr float MAX_DT_SECONDS = 0.05f;
+constexpr float COMPLEMENTARY_ALPHA = 0.98f;//98% gyro based orientation, 2% accelerometer
+constexpr float OUTPUT_FILTER_ALPHA = 0.60f;//low pass filter, in middle of smooth and fast signal reading
+constexpr float RATE_FILTER_ALPHA = 0.25f;//how much filtered velo moves to last filtered measurement, smooth
+constexpr float ANGLE_DEADBAND_DEG = 0.15f;//anything under this value is = 0, keeps out noise
+constexpr uint16_t CALIBRATION_SAMPLES = 300;//calibration samples to establish level
+constexpr float MAX_DT_SECONDS = 0.05f;//maximum time for gyro integration, prevents huge dt values, as gyrorate*dt gets oritentation
 
 Adafruit_MPU6050 mpu;
 
@@ -51,11 +51,14 @@ float normalizeAngle180(float angleDeg)
   return angleDeg;
 }
 
+//gets rid of very small measurements
 float applyDeadband(float value, float deadband)
 {
   return fabsf(value) < deadband ? 0.0f : value;
+  //if magnitude is smaller than the deadband, return 0
 }
 
+//take three measurements and return the middle value, prevents outliers
 float medianOfThree(float a, float b, float c)
 {
   if (a > b) { const float t = a; a = b; b = t; }
@@ -64,15 +67,15 @@ float medianOfThree(float a, float b, float c)
   return b;
 }
 
-void calculateAccelerometerAngles(
-    const sensors_event_t &accel,
-    float &rollOutputDeg,
-    float &pitchOutputDeg)
+//measuring acceleration, using gravity as reference
+void calculateAccelerometerAngles( const sensors_event_t &accel,float &rollOutputDeg,float &pitchOutputDeg)
 {
+  //roll comes from the y and z components of gravity
   const float rawRollDeg =
       atan2f(accel.acceleration.y, accel.acceleration.z) *
       RAD_TO_DEG_F;
 
+   //pitch comes from the X compared to the combined Y/Z direction
   const float rawPitchDeg =
       atan2f(
           -accel.acceleration.x,

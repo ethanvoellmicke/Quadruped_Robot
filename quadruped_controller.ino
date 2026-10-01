@@ -24,7 +24,7 @@ void setup()
 
 void loop()
 {
-  // Keep gait updates frequent so communication and IMU reads
+  //keep gait updates frequent so communication and IMU reads
   // do not interrupt the 20 ms motion scheduler.
   updateGaitController();
 

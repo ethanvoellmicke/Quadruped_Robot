@@ -216,7 +216,7 @@ void readSerialCommands()
     const char character = static_cast<char>(Serial.read());//read one byte and make check if character
     if (character == '\r') continue;//\r means keep going
 
-    if (character == '\n')//this means new line, so comand was finished being typed
+    if (character == '\n')// command was finished being typed by seeing a new line
     {
       commandBuffer[length] = '\0';//this adds a \0 to the end of the command
       processCommand(commandBuffer);
